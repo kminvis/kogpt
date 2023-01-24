@@ -1,23 +1,24 @@
-##########################################################
-# to run: streamlit run main.py
-##########################################################
-import plotly.express as px
-import streamlit as st
-import pandas as pd
-import requests
+import streamlit as st  # pylint: disable=import-error
+from streamlit.components.v1 import html
 
-# labels
-labels = requests.get("http://localhost:5000/api/labels").json()
-selector = st.multiselect("Select WELL:", labels)
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM 
 
-# load data
-data = pd.read_json(
-    requests.get("http://localhost:5000/api/data", params={"selector": selector}).json()
+tokenizer = AutoTokenizer.from_pretrained(
+  'kakaobrain/kogpt', revision='KoGPT6B-ryan1.5b-float16',  # or float32 version: revision=KoGPT6B-ryan1.5b
+  bos_token='[BOS]', eos_token='[EOS]', unk_token='[UNK]', pad_token='[PAD]', mask_token='[MASK]'
 )
+model = AutoModelForCausalLM.from_pretrained(
+  'kakaobrain/kogpt', revision='KoGPT6B-ryan1.5b-float16',  # or float32 version: revision=KoGPT6B-ryan1.5b
+  pad_token_id=tokenizer.eos_token_id,
+  torch_dtype='auto', low_cpu_mem_usage=True
+).to(device='cuda', non_blocking=True)
+_ = model.eval()
 
-# setup figure
-fig = px.scatter(
-    x=data["PHIND"],
-    y=data["GR"],
-)
-st.write(fig)
+prompt = '인간처럼 생각하고, 행동하는 \'지능\'을 통해 인류가 이제까지 풀지 못했던'
+with torch.no_grad():
+  tokens = tokenizer.encode(prompt, return_tensors='pt').to(device='cuda', non_blocking=True)
+  gen_tokens = model.generate(tokens, do_sample=True, temperature=0.8, max_length=64)
+  generated = tokenizer.batch_decode(gen_tokens)[0]
+  
+st.write(generated)
