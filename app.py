@@ -20,7 +20,6 @@ def on_button_click():
       tokens = tokenizer.encode(prompt, return_tensors='pt').to(device='cuda', non_blocking=True)
       gen_tokens = model.generate(tokens, do_sample=True, temperature=0.8, max_length=64)
       generated = tokenizer.batch_decode(gen_tokens)[0]
-
     st.write(generated)
         
 st.button("예측확인", on_click=on_button_click)
