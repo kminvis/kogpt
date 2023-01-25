@@ -1,25 +1,29 @@
 import streamlit as st  # pylint: disable=import-error
 from streamlit.components.v1 import html
+from typing import Optional
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM 
+import transformers
+from transformers import AutoModelWithLMHead, PreTrainedTokenizerFast
+from fastai.text.all import *
+import fastai
+import re
 
-# tokenizer = AutoTokenizer.from_pretrained(
-#   'kakaobrain/kogpt', revision='KoGPT6B-ryan1.5b-float16',  # or float32 version: revision=KoGPT6B-ryan1.5b
-#   bos_token='[BOS]', eos_token='[EOS]', unk_token='[UNK]', pad_token='[PAD]', mask_token='[MASK]'
-# )
-# model = AutoModelForCausalLM.from_pretrained(
-#   'kakaobrain/kogpt', revision='KoGPT6B-ryan1.5b-float16',  # or float32 version: revision=KoGPT6B-ryan1.5b
-#   pad_token_id=tokenizer.eos_token_id,
-#   torch_dtype='auto', low_cpu_mem_usage=True
-# ).to(device='cuda', non_blocking=True)
-# _ = model.eval()
-
-# def on_button_click():
-prompt = '인간처럼 생각하고, 행동하는 \'지능\'을 통해 인류가 이제까지 풀지 못했던'
-with torch.no_grad():
-  tokens = tokenizer.encode(prompt, return_tensors='pt').to(device='cuda', non_blocking=True)
-  gen_tokens = model.generate(tokens, do_sample=True, temperature=0.8, max_length=64)
-  generated = tokenizer.batch_decode(gen_tokens)[0]
+tokenizer = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
+  bos_token='</s>', eos_token='</s>', unk_token='<unk>',
+  pad_token='<pad>', mask_token='<mask>') 
+model = AutoModelWithLMHead.from_pretrained("skt/kogpt2-base-v2")
+text = """ 옛날 옛날 어느 마을에 흥부와 놀부 형제가 """
+input_ids = tokenizer.encode(text)
+gen_ids = model.generate(torch.tensor([input_ids]),
+                           max_length=128,
+                           repetition_penalty=2.0,
+                           pad_token_id=tokenizer.pad_token_id,
+                           eos_token_id=tokenizer.eos_token_id,
+                           bos_token_id=tokenizer.bos_token_id,
+                           use_cache=True
+                        )
+generated = tokenizer.decode(gen_ids[0,:].tolist())
 st.write(generated)
-        
+
+       
 # st.button("예측확인", on_click=on_button_click)
