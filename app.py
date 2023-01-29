@@ -1,29 +1,3 @@
-import streamlit as st  # pylint: disable=import-error
-from streamlit.components.v1 import html
-from typing import Optional
-import torch
-import transformers
-from transformers import AutoModelWithLMHead, PreTrainedTokenizerFast
-from fastai.text.all import *
-import fastai
-import re
+import streamlit as st
 
-tokenizer = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
-  bos_token='</s>', eos_token='</s>', unk_token='<unk>',
-  pad_token='<pad>', mask_token='<mask>') 
-model = AutoModelWithLMHead.from_pretrained("skt/kogpt2-base-v2")
-text = """ 옛날 옛날 어느 마을에 흥부와 놀부 형제가 """
-input_ids = tokenizer.encode(text)
-gen_ids = model.generate(torch.tensor([input_ids]),
-                           max_length=128,
-                           repetition_penalty=2.0,
-                           pad_token_id=tokenizer.pad_token_id,
-                           eos_token_id=tokenizer.eos_token_id,
-                           bos_token_id=tokenizer.bos_token_id,
-                           use_cache=True
-                        )
-generated = tokenizer.decode(gen_ids[0,:].tolist())
-st.write(generated)
-
-       
-# st.button("예측확인", on_click=on_button_click)
+st.write('hello world')
